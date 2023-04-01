@@ -17,7 +17,6 @@
 package org.tensorflow.lite.examples.modelpersonalization.fragments
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.os.Bundle
@@ -29,7 +28,6 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.content.res.AppCompatResources
@@ -48,7 +46,6 @@ import org.tensorflow.lite.examples.modelpersonalization.TransferLearningHelper.
 import org.tensorflow.lite.examples.modelpersonalization.TransferLearningHelper.Companion.CLASS_TWO
 import org.tensorflow.lite.examples.modelpersonalization.databinding.FragmentCameraBinding
 import org.tensorflow.lite.support.label.Category
-import java.io.IOException
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.ExecutorService
@@ -270,6 +267,7 @@ class CameraFragment : Fragment(),
             // listener for pause, resume and start of training
             btnPauseTrain.setOnClickListener {
                 viewModel.setTrainingState(MainViewModel.TrainingState.PAUSE)
+                // We call the replay buffer update in this method
                 transferLearningHelper.pauseTraining()
             }
             btnResumeTrain.setOnClickListener {
@@ -432,6 +430,108 @@ class CameraFragment : Fragment(),
         // processing and prepare training data.
         transferLearningHelper.addSample(bitmapBuffer, className, imageRotation)
     }
+
+    ///////////////////////// REPLAY PART START ///////////////////////////
+
+//    // Number of samples already added to the replay buffer
+//    private var samplesAdded: Int = 0
+//    private val databaseHelper: DatabaseHelper? = null
+//    var replayBuffer = HashMap<String, ArrayList<ByteArray>>()
+//
+//    // NEW FUNCTIONS FOR REPLAY
+//
+//    // Unsure about this
+//    fun addSampleBuffer2Img(bottleneck: ByteBuffer?, className: String?): Future<Void?>? {
+//        return addSample(bottleneck, className)
+//    }
+//
+//    /***
+//     * Adds new samples to the replay buffer. Everything
+//     */
+//    fun updateReplayBuffer(scenario: String?) {
+//        val startingPoint: Int = samplesAdded
+//        for (i in startingPoint until transferLearningHelper.trainingSamples.size()) {
+//            val bottleneck: ByteBuffer = transferLearningHelper.trainingSamples.get(i).bottleneck
+//            val className: String = transferLearningHelper.trainingSamples.get(i).className
+//            val b = ByteArray(bottleneck.remaining())
+//            bottleneck[b]
+//            val success: Boolean = databaseHelper.insertReplaySample(
+//                b, className,
+//                scenario ?: "default"
+//            )
+//            println("AEL DB INSERT: $success")
+//            samplesAdded++
+//        }
+//        Toast.makeText(
+//            context,
+//            "REPLAY BUFFER SIZE: " + (model.trainingSamples.size() - startingPoint),
+//            Toast.LENGTH_SHORT
+//        ).show()
+//    }
+//
+//    /***
+//     * Adds new samples to buffer - normal distribution between classes - fixed number
+//     */
+//    fun updateReplayBufferSmart(scenario: String?) {
+//        Toast.makeText(context, "UPDATING REPLAY BUFFER - PLEASE WAIT", Toast.LENGTH_SHORT).show()
+//        databaseHelper?.emptyReplayBuffer(scenario ?: "default")
+//        replayBuffer.clear()
+//        val res: Cursor = databaseHelper.getTrainingSamples(scenario ?: "default")
+//        if (res.count != 0) {
+//            while (res.moveToNext()) {
+//                val className = res.getString(1)
+//                val blobBytes = res.getBlob(2)
+//                if (!replayBuffer.containsKey(className)) {
+//                    replayBuffer[className] = ArrayList<ByteArray>()
+//                }
+//                // Added ? for safe. In case of error this might be the issue
+//                replayBuffer[className]?.add(blobBytes)
+//            }
+//        } else {
+//            println("AEL: DEN DOYLEUEI RESTORED")
+//        }
+//
+//        // Inserting to database
+//        var replaySamplesAdded = 0
+//        for ((className, classSamples) in replayBuffer) {
+//            classSamples.shuffle() // Adds randomness to the replay sample selection
+//            for (sample in classSamples) {
+//                // Added ? for safe. In case of error this might be the issue
+//                val success = databaseHelper?.insertReplaySample(sample, className, scenario ?: "default")
+//                replaySamplesAdded++
+//                if (replaySamplesAdded % 10 == 0) {
+//                    break
+//                }
+//            }
+//        }
+//        Toast.makeText(context, "REPLAY BUFFER SIZE: $replaySamplesAdded", Toast.LENGTH_SHORT).show()
+//
+//    }
+//
+//    /***
+//     * Replays samples stored in the buffer (before training)
+//     * TODO Replay mixed with new samples instead of before training
+//     */
+//    fun replay(scenario: String?) {
+//        // Added ? for safe. In case of error this might be the issue
+//        val res = databaseHelper?.getReplayBufferImages(scenario ?: "default")
+//        // Added the if res != null
+//        if (res != null) {
+//            Toast.makeText(context, "REPLAYING: ${res.count} SAMPLES", Toast.LENGTH_SHORT).show()
+//            if (res.count != 0) {
+//                while (res.moveToNext()) {
+//                    val className = res.getString(1)
+//                    val blobBytes = res.getBlob(2)
+//                    val bottleneck = ByteBuffer.wrap(blobBytes)
+//                    addSampleBuffer2Img(bottleneck, className)
+//                }
+//            } else {
+//                println("AEL: DEN DOYLEUEI")
+//            }
+//        }
+//    }
+
+    ///////////////////// REPLAY PART END ///////////////////////////
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onError(error: String) {

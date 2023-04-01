@@ -17,11 +17,13 @@
 package org.tensorflow.lite.examples.modelpersonalization
 
 import android.content.Context
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import android.widget.Toast
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
@@ -35,11 +37,15 @@ import org.tensorflow.lite.support.label.Category
 import org.tensorflow.lite.support.label.TensorLabel
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 import java.io.IOException
+import java.nio.ByteBuffer
 import java.nio.FloatBuffer
+import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.Future
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.random.Random
 
 // This class is responsible for the training process and inference process.
 
@@ -50,11 +56,12 @@ class TransferLearningHelper(
     val classifierListener: ClassifierListener?
 ) {
 
-    // A tf.lite interpreter used for inference and training.
+    // A tf.lite interpreter used for inference and training. (contains the signatures)
     private var interpreter: Interpreter? = null
     // A list of training samples objects which contain the bottleneck
     // and label data needed for model training (I THINK).
-    private val trainingSamples: MutableList<TrainingSample> = mutableListOf()
+    // Changed from private to public
+    val trainingSamples: MutableList<TrainingSample> = mutableListOf()
     // ExecutorService running the model training process
     private var executor: ExecutorService? = null
 
@@ -68,6 +75,13 @@ class TransferLearningHelper(
     private var targetHeight: Int = 0
     // Handler running on the main thread (UI thread).
     private val handler = Handler(Looper.getMainLooper())
+
+    // Our replayBuffer
+    private val replayBuffer: MutableList<TrainingSample> = mutableListOf()
+
+    // Used as a flag because pauseTraining is called both when we pause the training
+    // and when the inference button is called. We only want to update the replayBuffer once
+    private var replayBufferUpdated = false
 
     init {
         if (setupModelPersonalization()) {
@@ -86,6 +100,17 @@ class TransferLearningHelper(
     }
 
     fun pauseTraining() {
+        // Update replayBuffer with samples from this training cycle
+
+        // Apparently, pauseTraining is called when we pause the training but
+        // also when we click the inference button. This is the fix to it
+        if(!replayBufferUpdated){
+            Log.d("PauseTraining", "Updating replay buffer")
+            updateReplayBuffer()
+            resetTrainingSamples()
+            replayBufferUpdated = true
+        }
+
         executor?.shutdownNow()
     }
 
@@ -109,6 +134,7 @@ class TransferLearningHelper(
 
     // Process input image and add the output into list samples which are
     // ready for training.
+
     fun addSample(image: Bitmap, className: String, rotation: Int) {
         synchronized(lock) {
             if (interpreter == null) {
@@ -116,12 +142,20 @@ class TransferLearningHelper(
             }
             processInputImage(image, rotation)?.let { tensorImage ->
                 val bottleneck = loadBottleneck(tensorImage)
-                trainingSamples.add(
-                    TrainingSample(
+                val newSample = TrainingSample(
                         bottleneck,
                         encoding(classes.getValue(className))
                     )
-                )
+                trainingSamples.add(newSample)
+                //Check if the buffer is full
+//                if(replayBuffer.size >= REPLAY_BUFFER_SIZE){
+//                    //If it is full, remove a random sample
+//                    val randomIndex = Random.nextInt(REPLAY_BUFFER_SIZE)
+//                    replayBuffer.removeAt(randomIndex)
+//                }
+
+                //Add the new sample to the buffer
+//                replayBuffer.add(newSample)
             }
         }
     }
@@ -132,11 +166,16 @@ class TransferLearningHelper(
             setupModelPersonalization()
         }
 
+        // Reset the replayBufferUpdated flag
+        replayBufferUpdated = false
+
         // Create new thread for training process.
         executor = Executors.newSingleThreadExecutor()
         val trainBatchSize = getTrainBatchSize()
 
-        if (trainingSamples.size < trainBatchSize) {
+        // The fix of this exception I think is not in the getTrainBatchSize() function
+        // but rather adding both training samples and replay buffer samples in the if statement
+        if (trainingSamples.size + replayBuffer.size < trainBatchSize) {
             throw RuntimeException(
                 String.format(
                     "Too few samples to start training: need %d, got %d",
@@ -144,6 +183,15 @@ class TransferLearningHelper(
                 )
             )
         }
+
+        Log.d("ReplayBuffer", "Replay buffer size: ${replayBuffer.size}")
+        Log.d("ReplayBuffer", "Training samples size: ${trainingSamples.size}")
+
+        // Combine the training samples and the replay buffer samples
+        val combinedSamples = (trainingSamples + replayBuffer).toMutableList()
+        combinedSamples.shuffle()
+
+        Log.d("ReplayBuffer","Combined samples size: ${combinedSamples.size}")
 
         executor?.execute {
             synchronized(lock) {
@@ -158,7 +206,9 @@ class TransferLearningHelper(
                     // variance.
                     trainingSamples.shuffle()
 
-                    trainingBatches(trainBatchSize)
+                    // Now trainingBatches will be called with both the training samples and the replay buffer samples
+                    // The function implementation will change to adapt to this
+                    trainingBatches(trainBatchSize, combinedSamples)
                         .forEach { trainingSamples ->
                             val trainingBatchBottlenecks =
                                 MutableList(trainBatchSize) {
@@ -196,6 +246,7 @@ class TransferLearningHelper(
                     handler.post {
                         classifierListener?.onLossResults(avgLoss)
                     }
+
                 }
             }
         }
@@ -215,6 +266,7 @@ class TransferLearningHelper(
         val loss = FloatBuffer.allocate(1)
         outputs[TRAINING_OUTPUT_KEY] = loss
 
+        // Training as defined in our signature in the model.
         interpreter?.runSignature(inputs, outputs, TRAINING_KEY)
         return loss.get(0)
     }
@@ -296,38 +348,100 @@ class TransferLearningHelper(
     }
 
     // Training model expected batch size.
+    // We can ask as many samples as we want
     private fun getTrainBatchSize(): Int {
+
+        Log.d("TrainBatch", "Training samples: ${trainingSamples.size}")
+        Log.d("TrainBatch", "Replay buffer: ${replayBuffer.size}")
+
+        // Added replayBuffer sizes here too
         return min(
-            max( /* at least one sample needed */1, trainingSamples.size),
+            max( /* at least one sample needed */1, trainingSamples.size + replayBuffer.size),
             EXPECTED_BATCH_SIZE
         )
     }
 
     // Constructs an iterator that iterates over training sample batches.
-    private fun trainingBatches(trainBatchSize: Int): Iterator<List<TrainingSample>> {
+    // Altered the function to include replayBuffer samples as well
+    private fun trainingBatches(trainBatchSize: Int, samples: List<TrainingSample>): Iterator<List<TrainingSample>> {
+
         return object : Iterator<List<TrainingSample>> {
             private var nextIndex = 0
 
             override fun hasNext(): Boolean {
-                return nextIndex < trainingSamples.size
+                return nextIndex < samples.size
             }
 
             override fun next(): List<TrainingSample> {
                 val fromIndex = nextIndex
                 val toIndex: Int = nextIndex + trainBatchSize
                 nextIndex = toIndex
-                return if (toIndex >= trainingSamples.size) {
+                return if (toIndex >= samples.size) {
                     // To keep batch size consistent, last batch may include some elements from the
                     // next-to-last batch.
-                    trainingSamples.subList(
-                        trainingSamples.size - trainBatchSize,
-                        trainingSamples.size
+                    samples.subList(
+                        samples.size - trainBatchSize,
+                        samples.size
                     )
                 } else {
-                    trainingSamples.subList(fromIndex, toIndex)
+                    samples.subList(fromIndex, toIndex)
                 }
             }
         }
+    }
+
+    private fun updateReplayBuffer(){
+        // Portion of trainingSamples to add to replayBuffer
+        // I could zero this if I want to disable replayBuffer
+        val portion = 1.0
+
+        val samplesToAdd = (trainingSamples.size * portion).toInt()
+
+        // Might not be necessary
+        trainingSamples.shuffle()
+
+        Log.d("ReplayBuffer","Number of trainingSamples before updating replayBuffer are: ${trainingSamples.size}")
+
+        val samplesToAddToReplayBuffer = trainingSamples.subList(0, samplesToAdd)
+
+        // If samplesToAddToReplayBuffer are more than REPLAY_BUFFER_SIZE we will remove some
+        if (samplesToAddToReplayBuffer.size > REPLAY_BUFFER_SIZE){
+            samplesToAddToReplayBuffer.subList(0, samplesToAddToReplayBuffer.size - REPLAY_BUFFER_SIZE)
+        }
+
+        // Add them to replayBuffer
+        replayBuffer.addAll(samplesToAddToReplayBuffer)
+
+        Log.d("ReplayBuffer", "Adding ${samplesToAddToReplayBuffer.size} samples to replay buffer")
+        Log.d("ReplayBuffer", "Replay buffer size before removing extra samples is now: ${replayBuffer.size}")
+
+        // We randomly remove samples from the replay buffer
+        // CAUTION HERE
+        // We basically add the new samples to the replay buffer
+        // and then remove from the buffer until it reaches it's
+        // maximum size. This means that probably some new samples
+        // will be removed instantly.
+        if(replayBuffer.size > REPLAY_BUFFER_SIZE){
+
+            val samplesToRemove = replayBuffer.size - REPLAY_BUFFER_SIZE
+
+            Log.d("ReplayBuffer", "We will remove $samplesToRemove samples from replay buffer")
+
+            // We remove the excess samples
+            for(i in 0 until samplesToRemove){
+                val randomIndex = Random.nextInt(replayBuffer.size)
+                val removedSample = replayBuffer.removeAt(randomIndex)
+                Log.d("ReplayBuffer", "Removing samples at index $randomIndex from replay buffer")
+            }
+        }
+
+        Log.d("ReplayBuffer", "Replay buffer size after removing extra samples is now: ${replayBuffer.size}")
+    }
+
+    // Still unsure about this but probably we want to remove the samples from the list after
+    // training because the replayBuffer will retain the previous knowledge
+    private fun resetTrainingSamples(){
+        trainingSamples.clear()
     }
 
     interface ClassifierListener {
@@ -363,6 +477,9 @@ class TransferLearningHelper(
         private const val BOTTLENECK_SIZE = 1 * 7 * 7 * 1280
         private const val EXPECTED_BATCH_SIZE = 20
         private const val TAG = "ModelPersonalizationHelper"
+
+        // Replay buffer size
+        private const val REPLAY_BUFFER_SIZE = 100
     }
 
     data class TrainingSample(val bottleneck: FloatArray, val label: FloatArray)
