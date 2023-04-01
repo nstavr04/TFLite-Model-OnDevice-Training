@@ -61,4 +61,5 @@
     <string name="tv_resume_training">Resume</string>
     <string name="tv_collect_sample">Collect sample</string>
     <string name="tv_icon_helper">\?</string>
+    <string name="continual_learning_demo">Continual Learning Demo</string>
 </resources>

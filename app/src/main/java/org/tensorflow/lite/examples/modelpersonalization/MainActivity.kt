@@ -53,6 +53,14 @@ class MainActivity : AppCompatActivity() {
         activityMainBinding.tvHelper.setOnClickListener {
             HelperDialog().show(supportFragmentManager, HelperDialog.TAG)
         }
+        // Call refresh function when user clicks on the refresh icon
+        activityMainBinding.refreshButton.setOnClickListener {
+            restartAppAndModel()
+        }
+    }
+
+    // Will want to implement this as a reset button
+    private fun restartAppAndModel() {
     }
 
     // Might be fixed but unsure

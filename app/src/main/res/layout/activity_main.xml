@@ -46,25 +46,41 @@
             android:background="@color/toolbar_background"
             app:contentInsetStart="0dp">
 
-            <androidx.constraintlayout.widget.ConstraintLayout
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="match_parent">
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="horizontal">
 
-                <ImageView
+                <TextView
+                    android:id="@+id/app_Title"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/continual_learning_demo"
+                    android:textColor="@color/tfl_color_orange"
+                    android:textStyle="bold"
+                    android:textSize="18sp"
+                    android:layout_marginStart="32dp"
+                    android:textAppearance="@style/TitleTextAppearance"
                     android:adjustViewBounds="true"
                     android:contentDescription="@null"
-                    android:src="@drawable/tfl_logo"
-                    app:layout_constraintEnd_toStartOf="@id/tvHelper"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    android:src="@drawable/tfl_logo" />
+
+                <ImageButton
+                    android:id="@+id/refresh_button"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.2"
+                    android:src="@drawable/baseline_refresh_24"
+                    android:contentDescription="@null"
+                    android:background="?android:selectableItemBackground" />
 
                 <TextView
                     android:id="@+id/tvHelper"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="start"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.2"
                     android:gravity="center"
                     android:paddingStart="@dimen/fr_camera_toolbar_icon_padding"
                     android:paddingEnd="@dimen/fr_camera_toolbar_icon_padding"
@@ -72,22 +88,19 @@
                     android:textColor="@android:color/black"
                     android:textSize="@dimen/fr_camera_helper_icon_size"
                     android:textStyle="bold"
-                    app:layout_constraintEnd_toStartOf="@id/imgSetting"
-                    app:layout_constraintTop_toTopOf="parent"
                     tools:ignore="SpUsage" />
 
                 <ImageView
                     android:id="@+id/imgSetting"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:layout_gravity="end"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="0.2"
                     android:contentDescription="@null"
                     android:paddingStart="@dimen/fr_camera_toolbar_icon_padding"
                     android:paddingEnd="@dimen/fr_camera_toolbar_icon_padding"
-                    android:src="@drawable/ic_baseline_settings"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </androidx.constraintlayout.widget.ConstraintLayout>
+                    android:src="@drawable/ic_baseline_settings" />
+            </LinearLayout>
+
         </androidx.appcompat.widget.Toolbar>
 
     </RelativeLayout>

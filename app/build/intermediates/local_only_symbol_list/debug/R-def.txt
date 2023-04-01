@@ -33,6 +33,7 @@ dimen setting_dialog_default_row_margin
 dimen setting_dialog_padding
 dimen setting_dialog_text_size
 dimen stroke_small
+drawable baseline_refresh_24
 drawable btn_big_gray
 drawable btn_big_green
 drawable btn_big_yellow
@@ -47,6 +48,7 @@ drawable tfl_logo
 drawable toggle_widget_background
 id action_camera_to_permissions
 id action_permissions_to_camera
+id app_Title
 id btnCancel
 id btnCollectSample
 id btnConfirm
@@ -67,6 +69,7 @@ id nav_graph
 id optionsLayout
 id permissions_fragment
 id radioButton
+id refresh_button
 id rlThreads
 id threads_minus
 id threads_plus
@@ -93,6 +96,7 @@ navigation nav_graph
 string app_name
 string btn_setting_dialog_cancel
 string btn_setting_dialog_confirm
+string continual_learning_demo
 string control_dialog_thread_button_minus
 string control_dialog_thread_button_plus
 string helper_dialog_content
@@ -114,3 +118,4 @@ string tv_start_training
 style AppTheme
 style BigButton
 style ClassButton
+style TitleTextAppearance

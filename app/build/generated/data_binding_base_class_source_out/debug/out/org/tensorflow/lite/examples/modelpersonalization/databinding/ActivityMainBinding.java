@@ -4,6 +4,7 @@ package org.tensorflow.lite.examples.modelpersonalization.databinding;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -23,10 +24,16 @@ public final class ActivityMainBinding implements ViewBinding {
   private final CoordinatorLayout rootView;
 
   @NonNull
+  public final TextView appTitle;
+
+  @NonNull
   public final FragmentContainerView fragmentContainer;
 
   @NonNull
   public final ImageView imgSetting;
+
+  @NonNull
+  public final ImageButton refreshButton;
 
   @NonNull
   public final Toolbar toolbar;
@@ -34,12 +41,14 @@ public final class ActivityMainBinding implements ViewBinding {
   @NonNull
   public final TextView tvHelper;
 
-  private ActivityMainBinding(@NonNull CoordinatorLayout rootView,
+  private ActivityMainBinding(@NonNull CoordinatorLayout rootView, @NonNull TextView appTitle,
       @NonNull FragmentContainerView fragmentContainer, @NonNull ImageView imgSetting,
-      @NonNull Toolbar toolbar, @NonNull TextView tvHelper) {
+      @NonNull ImageButton refreshButton, @NonNull Toolbar toolbar, @NonNull TextView tvHelper) {
     this.rootView = rootView;
+    this.appTitle = appTitle;
     this.fragmentContainer = fragmentContainer;
     this.imgSetting = imgSetting;
+    this.refreshButton = refreshButton;
     this.toolbar = toolbar;
     this.tvHelper = tvHelper;
   }
@@ -71,6 +80,12 @@ public final class ActivityMainBinding implements ViewBinding {
     // This is done to optimize the compiled bytecode for size and performance.
     int id;
     missingId: {
+      id = R.id.app_Title;
+      TextView appTitle = ViewBindings.findChildViewById(rootView, id);
+      if (appTitle == null) {
+        break missingId;
+      }
+
       id = R.id.fragment_container;
       FragmentContainerView fragmentContainer = ViewBindings.findChildViewById(rootView, id);
       if (fragmentContainer == null) {
@@ -80,6 +95,12 @@ public final class ActivityMainBinding implements ViewBinding {
       id = R.id.imgSetting;
       ImageView imgSetting = ViewBindings.findChildViewById(rootView, id);
       if (imgSetting == null) {
+        break missingId;
+      }
+
+      id = R.id.refresh_button;
+      ImageButton refreshButton = ViewBindings.findChildViewById(rootView, id);
+      if (refreshButton == null) {
         break missingId;
       }
 
@@ -95,8 +116,8 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((CoordinatorLayout) rootView, fragmentContainer, imgSetting,
-          toolbar, tvHelper);
+      return new ActivityMainBinding((CoordinatorLayout) rootView, appTitle, fragmentContainer,
+          imgSetting, refreshButton, toolbar, tvHelper);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

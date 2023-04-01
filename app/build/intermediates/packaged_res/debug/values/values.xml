@@ -36,6 +36,7 @@
     <string name="app_name">TFLite Model Personalization Demo App</string>
     <string name="btn_setting_dialog_cancel">Cancel</string>
     <string name="btn_setting_dialog_confirm">Confirm</string>
+    <string name="continual_learning_demo">Continual Learning Demo</string>
     <string name="control_dialog_thread_button_minus">Decrease the number of threads used</string>
     <string name="control_dialog_thread_button_plus">Increase the number of threads used</string>
     <string name="helper_dialog_content">
@@ -96,5 +97,11 @@
         <item name="android:paddingBottom">12dp</item>
         <item name="android:background">@drawable/btn_default</item>
         <item name="android:foreground">?android:attr/selectableItemBackground</item>
+    </style>
+    <style name="TitleTextAppearance">
+        <item name="android:shadowColor">@android:color/black</item>
+        <item name="android:shadowDx">1</item>
+        <item name="android:shadowDy">1</item>
+        <item name="android:shadowRadius">1</item>
     </style>
 </resources>
