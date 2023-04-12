@@ -106,6 +106,7 @@ class TransferLearningHelper(
         // also when we click the inference button. This is the fix to it
         if(!replayBufferUpdated){
             Log.d("PauseTraining", "Updating replay buffer")
+            // Disabling these for now
             updateReplayBuffer()
             resetTrainingSamples()
             replayBufferUpdated = true
@@ -147,15 +148,6 @@ class TransferLearningHelper(
                         encoding(classes.getValue(className))
                     )
                 trainingSamples.add(newSample)
-                //Check if the buffer is full
-//                if(replayBuffer.size >= REPLAY_BUFFER_SIZE){
-//                    //If it is full, remove a random sample
-//                    val randomIndex = Random.nextInt(REPLAY_BUFFER_SIZE)
-//                    replayBuffer.removeAt(randomIndex)
-//                }
-
-                //Add the new sample to the buffer
-//                replayBuffer.add(newSample)
             }
         }
     }
@@ -189,7 +181,7 @@ class TransferLearningHelper(
 
         // Combine the training samples and the replay buffer samples
         val combinedSamples = (trainingSamples + replayBuffer).toMutableList()
-        combinedSamples.shuffle()
+        // combinedSamples.shuffle()
 
         Log.d("ReplayBuffer","Combined samples size: ${combinedSamples.size}")
 
@@ -204,12 +196,12 @@ class TransferLearningHelper(
 
                     // Shuffle training samples to reduce overfitting and
                     // variance.
-                    trainingSamples.shuffle()
+                    combinedSamples.shuffle()
 
                     // Now trainingBatches will be called with both the training samples and the replay buffer samples
                     // The function implementation will change to adapt to this
                     trainingBatches(trainBatchSize, combinedSamples)
-                        .forEach { trainingSamples ->
+                        .forEach { combinedSamplesCurrentBatch ->
                             val trainingBatchBottlenecks =
                                 MutableList(trainBatchSize) {
                                     FloatArray(
@@ -226,7 +218,7 @@ class TransferLearningHelper(
 
                             // Copy a training sample list into two different
                             // input training lists.
-                            trainingSamples.forEachIndexed { index, trainingSample ->
+                            combinedSamplesCurrentBatch.forEachIndexed { index, trainingSample ->
                                 trainingBatchBottlenecks[index] =
                                     trainingSample.bottleneck
                                 trainingBatchLabels[index] =
@@ -393,7 +385,7 @@ class TransferLearningHelper(
     private fun updateReplayBuffer(){
         // Portion of trainingSamples to add to replayBuffer
         // I could zero this if I want to disable replayBuffer
-        val portion = 1.0
+        val portion = 0.25
 
         val samplesToAdd = (trainingSamples.size * portion).toInt()
 
