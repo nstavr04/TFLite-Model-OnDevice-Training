@@ -19,6 +19,8 @@ package org.tensorflow.lite.examples.modelpersonalization.fragments
 import android.annotation.SuppressLint
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -76,6 +78,9 @@ class CameraFragment : Fragment(),
 
     /** Blocking camera operations are performed using this executor */
     private lateinit var cameraExecutor: ExecutorService
+
+    // Used for the first time to train with white images to solve the class incremental issue
+    private var _isFirstTime: Boolean = true
 
     // When the user presses the "add sample" button for some class,
     // that class will be added to this queue. It is later extracted by
@@ -333,6 +338,11 @@ class CameraFragment : Fragment(),
                             )
                         }
 
+                        // Add white image and train the model only on the first run
+//                        if (_isFirstTime) {
+//                            addWhiteImageToAllClassesAndTrain()
+//                        }
+
                         // poll is basically pop in queue
                         val sampleClass = addSampleRequests.poll()
                         if (sampleClass != null) {
@@ -393,6 +403,42 @@ class CameraFragment : Fragment(),
         // processing and prepare training data.
         transferLearningHelper.addSample(bitmapBuffer, className, imageRotation)
     }
+
+    private fun createWhiteBitmap(width: Int, height: Int): Bitmap {
+        val whiteBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(whiteBitmap)
+        canvas.drawColor(Color.WHITE)
+        return whiteBitmap
+    }
+
+    // Used only at the launch of the app
+    private fun addWhiteImageToAllClassesAndTrain() {
+        val classNames = arrayOf(CLASS_ONE, CLASS_TWO, CLASS_THREE, CLASS_FOUR)
+        val whiteBitmap = createWhiteBitmap(bitmapBuffer.width, bitmapBuffer.height)
+
+        // Add white image to all classes
+        for (className in classNames) {
+            transferLearningHelper.addSample(whiteBitmap, className, 0)
+            viewModel.increaseNumberOfSample(className)
+        }
+
+        // Train the model
+        Log.d("WhiteImage", "White image start training")
+        transferLearningHelper.startTraining()
+
+        // Wait 2 seconds
+        Thread.sleep(2000)
+        Log.d("WhiteImage", "White image pause training")
+        transferLearningHelper.pauseTraining()
+
+        // Clear the samples
+        //transferLearningHelper.resetTrainingSamples()
+        //transferLearningHelper.clearReplayBuffer()
+        //Log.d("WhiteImage", "White image clear training samples and replay buffer")
+
+        _isFirstTime = false
+    }
+
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onError(error: String) {

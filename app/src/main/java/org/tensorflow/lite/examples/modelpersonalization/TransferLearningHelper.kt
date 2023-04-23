@@ -432,8 +432,12 @@ class TransferLearningHelper(
 
     // Still unsure about this but probably we want to remove the samples from the list after
     // training because the replayBuffer will retain the previous knowledge
-    private fun resetTrainingSamples(){
+    public fun resetTrainingSamples(){
         trainingSamples.clear()
+    }
+
+    public fun clearReplayBuffer(){
+        replayBuffer.clear()
     }
 
     interface ClassifierListener {
