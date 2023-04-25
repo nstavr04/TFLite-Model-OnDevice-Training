@@ -36,6 +36,7 @@ import org.tensorflow.lite.support.image.ops.Rot90Op
 import org.tensorflow.lite.support.label.Category
 import org.tensorflow.lite.support.label.TensorLabel
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.FloatBuffer
@@ -82,6 +83,7 @@ class TransferLearningHelper(
     // Used as a flag because pauseTraining is called both when we pause the training
     // and when the inference button is called. We only want to update the replayBuffer once
     private var replayBufferUpdated = false
+    private var firstTrainingFlag = true
 
     init {
         if (setupModelPersonalization()) {
@@ -154,8 +156,30 @@ class TransferLearningHelper(
 
     // Start training process
     fun startTraining() {
-        if (interpreter == null) {
+        if (interpreter == null || firstTrainingFlag) {
             setupModelPersonalization()
+            firstTrainingFlag = false
+
+        }
+        else
+        {
+            // Save weights
+            val checkpointPath = MainActivity.getCheckpointPath(context)
+            val saveInputs: MutableMap<String, Any> = HashMap()
+            saveInputs[SAVE_INPUT_KEY] = checkpointPath
+            val saveOutputs: MutableMap<String, Any> = HashMap()
+            saveOutputs[SAVE_OUTPUT_KEY] = checkpointPath
+            interpreter?.runSignature(saveInputs, saveOutputs, SAVE_KEY)
+
+            setupModelPersonalization()
+
+            // Load weights
+            val restoreInputs: MutableMap<String, Any> = HashMap()
+            restoreInputs[RESTORE_INPUT_KEY] = checkpointPath
+            val restoreOutputs: MutableMap<String, Any> = HashMap()
+            val restoredTensors = HashMap<String, FloatArray>()
+            restoreOutputs[RESTORE_OUTPUT_KEY] = restoredTensors
+            interpreter?.runSignature(restoreInputs, restoreOutputs, RESTORE_KEY)
         }
 
         // Reset the replayBufferUpdated flag
@@ -469,6 +493,14 @@ class TransferLearningHelper(
         private const val INFERENCE_INPUT_KEY = "feature"
         private const val INFERENCE_OUTPUT_KEY = "output"
         private const val INFERENCE_KEY = "infer"
+
+        private const val SAVE_INPUT_KEY = "checkpoint_path"
+        private const val SAVE_OUTPUT_KEY = "checkpoint_path"
+        private const val SAVE_KEY = "save"
+
+        private const val RESTORE_INPUT_KEY = "checkpoint_path"
+        private const val RESTORE_OUTPUT_KEY = "restored_tensors"
+        private const val RESTORE_KEY = "restore"
 
         private const val BOTTLENECK_SIZE = 1 * 7 * 7 * 1280
         private const val EXPECTED_BATCH_SIZE = 20

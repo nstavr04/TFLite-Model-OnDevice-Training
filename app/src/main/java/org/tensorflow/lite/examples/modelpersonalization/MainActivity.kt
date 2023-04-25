@@ -16,6 +16,7 @@
 
 package org.tensorflow.lite.examples.modelpersonalization
 
+import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -24,6 +25,7 @@ import androidx.activity.viewModels
 import org.tensorflow.lite.examples.modelpersonalization.databinding.ActivityMainBinding
 import org.tensorflow.lite.examples.modelpersonalization.fragments.HelperDialog
 import org.tensorflow.lite.examples.modelpersonalization.fragments.SettingFragment
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     private lateinit var activityMainBinding: ActivityMainBinding
@@ -71,6 +73,16 @@ class MainActivity : AppCompatActivity() {
             finishAfterTransition()
         } else {
             super.onBackPressed()
+        }
+    }
+
+    companion object {
+         fun getCheckpointPath(context: Context): String {
+            val checkpointDir = context.getDir("checkpoints", Context.MODE_PRIVATE)
+            if (!checkpointDir.exists()) {
+                checkpointDir.mkdirs()
+            }
+            return File(checkpointDir, "checkpoint").absolutePath
         }
     }
 }
