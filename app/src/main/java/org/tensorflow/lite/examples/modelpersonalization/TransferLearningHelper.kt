@@ -26,6 +26,7 @@ import android.util.Log
 import android.widget.Toast
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
+import org.tensorflow.lite.Tensor
 import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
@@ -156,6 +157,7 @@ class TransferLearningHelper(
 
     // Start training process
     fun startTraining() {
+
         if (interpreter == null || firstTrainingFlag) {
             setupModelPersonalization()
             firstTrainingFlag = false
@@ -164,22 +166,35 @@ class TransferLearningHelper(
         else
         {
             // Save weights
-            val checkpointPath = MainActivity.getCheckpointPath(context)
-            val saveInputs: MutableMap<String, Any> = HashMap()
-            saveInputs[SAVE_INPUT_KEY] = checkpointPath
-            val saveOutputs: MutableMap<String, Any> = HashMap()
-            saveOutputs[SAVE_OUTPUT_KEY] = checkpointPath
-            interpreter?.runSignature(saveInputs, saveOutputs, SAVE_KEY)
+//            val checkpointPath = MainActivity.getCheckpointPath(context)
+//            val saveInputs: MutableMap<String, Any> = HashMap()
+//            saveInputs[SAVE_INPUT_KEY] = checkpointPath
+//            val saveOutputs: MutableMap<String, Any> = HashMap()
+//            saveOutputs[SAVE_OUTPUT_KEY] = checkpointPath
+//            interpreter?.runSignature(saveInputs, saveOutputs, SAVE_KEY)
 
             setupModelPersonalization()
 
             // Load weights
-            val restoreInputs: MutableMap<String, Any> = HashMap()
-            restoreInputs[RESTORE_INPUT_KEY] = checkpointPath
-            val restoreOutputs: MutableMap<String, Any> = HashMap()
-            val restoredTensors = HashMap<String, FloatArray>()
-            restoreOutputs[RESTORE_OUTPUT_KEY] = restoredTensors
-            interpreter?.runSignature(restoreInputs, restoreOutputs, RESTORE_KEY)
+//            val restoreInputs: MutableMap<String, Any> = HashMap()
+//            restoreInputs[RESTORE_INPUT_KEY] = checkpointPath
+//            val restoreOutputs: MutableMap<String, Any> = HashMap()
+//            val restoredTensors = HashMap<String, FloatArray>()
+//            restoreOutputs[RESTORE_OUTPUT_KEY] = restoredTensors
+//            interpreter?.runSignature(restoreInputs, restoreOutputs, RESTORE_KEY)
+        }
+
+        val numInputTensors = interpreter?.inputTensorCount ?: 0
+        val numOutputTensors = interpreter?.outputTensorCount ?: 0
+
+        for (i in 0 until numInputTensors) {
+            val tensor = interpreter?.getInputTensor(i)
+            Log.d("TensorInfo", "Input tensor $i: ${tensor?.name()}")
+        }
+
+        for (i in 0 until numOutputTensors) {
+            val tensor = interpreter?.getOutputTensor(i)
+            Log.d("TensorInfo", "Output tensor $i: ${tensor?.name()}")
         }
 
         // Reset the replayBufferUpdated flag
@@ -274,6 +289,7 @@ class TransferLearningHelper(
         bottlenecks: MutableList<FloatArray>,
         labels: MutableList<FloatArray>
     ): Float {
+
         val inputs: MutableMap<String, Any> = HashMap()
         inputs[TRAINING_INPUT_BOTTLENECK_KEY] = bottlenecks.toTypedArray()
         inputs[TRAINING_INPUT_LABELS_KEY] = labels.toTypedArray()
