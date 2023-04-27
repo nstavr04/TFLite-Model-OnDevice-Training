@@ -17,16 +17,13 @@
 package org.tensorflow.lite.examples.modelpersonalization
 
 import android.content.Context
-import android.database.Cursor
 import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
-import android.widget.Toast
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.Tensor
 import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.common.ops.NormalizeOp
 import org.tensorflow.lite.support.image.ImageProcessor
@@ -37,14 +34,13 @@ import org.tensorflow.lite.support.image.ops.Rot90Op
 import org.tensorflow.lite.support.label.Category
 import org.tensorflow.lite.support.label.TensorLabel
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
-import java.io.File
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.random.Random
@@ -110,8 +106,8 @@ class TransferLearningHelper(
         if(!replayBufferUpdated){
             Log.d("PauseTraining", "Updating replay buffer")
             // Disabling these for now
-            updateReplayBuffer()
-            resetTrainingSamples()
+            //updateReplayBuffer()
+            //resetTrainingSamples()
             replayBufferUpdated = true
         }
 
@@ -123,7 +119,7 @@ class TransferLearningHelper(
         val options = Interpreter.Options()
         options.numThreads = numThreads
         return try {
-            val modelFile = FileUtil.loadMappedFile(context, "model.tflite")
+            val modelFile = FileUtil.loadMappedFile(context, "modelnew.tflite")
             interpreter = Interpreter(modelFile, options)
             true
         } catch (e: IOException) {
@@ -157,7 +153,7 @@ class TransferLearningHelper(
 
     // Start training process
     fun startTraining() {
-
+// || firstTrainingFlag
         if (interpreter == null || firstTrainingFlag) {
             setupModelPersonalization()
             firstTrainingFlag = false
@@ -173,7 +169,7 @@ class TransferLearningHelper(
 //            saveOutputs[SAVE_OUTPUT_KEY] = checkpointPath
 //            interpreter?.runSignature(saveInputs, saveOutputs, SAVE_KEY)
 
-            setupModelPersonalization()
+             setupModelPersonalization()
 
             // Load weights
 //            val restoreInputs: MutableMap<String, Any> = HashMap()
@@ -182,19 +178,6 @@ class TransferLearningHelper(
 //            val restoredTensors = HashMap<String, FloatArray>()
 //            restoreOutputs[RESTORE_OUTPUT_KEY] = restoredTensors
 //            interpreter?.runSignature(restoreInputs, restoreOutputs, RESTORE_KEY)
-        }
-
-        val numInputTensors = interpreter?.inputTensorCount ?: 0
-        val numOutputTensors = interpreter?.outputTensorCount ?: 0
-
-        for (i in 0 until numInputTensors) {
-            val tensor = interpreter?.getInputTensor(i)
-            Log.d("TensorInfo", "Input tensor $i: ${tensor?.name()}")
-        }
-
-        for (i in 0 until numOutputTensors) {
-            val tensor = interpreter?.getOutputTensor(i)
-            Log.d("TensorInfo", "Output tensor $i: ${tensor?.name()}")
         }
 
         // Reset the replayBufferUpdated flag
@@ -283,6 +266,28 @@ class TransferLearningHelper(
         }
     }
 
+    // Used for debugging to check the weights after training
+    private fun getModelWeightsHead(bottlenecks: MutableList<FloatArray>): FloatArray {
+        val wsSize = BOTTLENECK_SIZE * NUM_CLASSES * 4 // 4 bytes per float
+        val wsBuffer = ByteBuffer.allocateDirect(wsSize).order(ByteOrder.nativeOrder())
+
+        val inputs: MutableMap<String, Any> = HashMap()
+        // Used just because we need an input. Has no use
+        inputs[TRAINING_INPUT_BOTTLENECK_KEY] = bottlenecks.toTypedArray()
+
+        val outputs: MutableMap<String, Any> = HashMap()
+        outputs["ws"] = wsBuffer
+
+        // Get weights and biases as defined in our signature in the model.
+        interpreter?.runSignature(inputs, outputs, "initialize")
+
+        val wsArray = FloatArray(BOTTLENECK_SIZE * NUM_CLASSES)
+        wsBuffer.rewind()
+        wsBuffer.asFloatBuffer().get(wsArray)
+
+        return wsArray
+    }
+
     // Runs one training step with the given bottleneck batches and labels
     // and return the loss number.
     private fun training(
@@ -300,6 +305,14 @@ class TransferLearningHelper(
 
         // Training as defined in our signature in the model.
         interpreter?.runSignature(inputs, outputs, TRAINING_KEY)
+
+        Log.d("Loss", "Loss is ${loss.get(0)}")
+
+        // Get weights and biases after training
+        val weights = getModelWeightsHead(bottlenecks)
+        // Use or print the weights and biases as needed
+        Log.d("WeightsAndBiases", "Weights: ${weights.contentToString()}")
+
         return loss.get(0)
     }
 
@@ -518,6 +531,7 @@ class TransferLearningHelper(
         private const val RESTORE_OUTPUT_KEY = "restored_tensors"
         private const val RESTORE_KEY = "restore"
 
+        private const val NUM_CLASSES = 4
         private const val BOTTLENECK_SIZE = 1 * 7 * 7 * 1280
         private const val EXPECTED_BATCH_SIZE = 20
         private const val TAG = "ModelPersonalizationHelper"
