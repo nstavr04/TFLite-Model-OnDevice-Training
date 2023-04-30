@@ -338,11 +338,6 @@ class CameraFragment : Fragment(),
                             )
                         }
 
-                        // Add white image and train the model only on the first run
-//                        if (_isFirstTime) {
-//                            addWhiteImageToAllClassesAndTrain()
-//                        }
-
                         // poll is basically pop in queue
                         val sampleClass = addSampleRequests.poll()
                         if (sampleClass != null) {
@@ -412,6 +407,7 @@ class CameraFragment : Fragment(),
     }
 
     // Used only at the launch of the app
+    // NOT USED ANYMORE
     private fun addWhiteImageToAllClassesAndTrain() {
         val classNames = arrayOf(CLASS_ONE, CLASS_TWO, CLASS_THREE, CLASS_FOUR)
         val whiteBitmap = createWhiteBitmap(bitmapBuffer.width, bitmapBuffer.height)

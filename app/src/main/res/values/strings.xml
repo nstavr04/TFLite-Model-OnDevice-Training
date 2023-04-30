@@ -15,7 +15,7 @@
     ~ limitations under the License.
 -->
 <resources>
-    <string name="app_name">TFLite Model Personalization Demo App</string>
+    <string name="app_name">Continual Learning Demo App</string>
     <string name="control_dialog_thread_button_minus">Decrease the number of threads used</string>
     <string name="control_dialog_thread_button_plus">Increase the number of threads used</string>
     <string name="label_inference_time">Inference Time</string>

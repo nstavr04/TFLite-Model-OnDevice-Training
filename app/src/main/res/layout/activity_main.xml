@@ -67,14 +67,15 @@
                     android:contentDescription="@null"
                     android:src="@drawable/tfl_logo" />
 
-                <ImageButton
-                    android:id="@+id/refresh_button"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="0.2"
-                    android:src="@drawable/baseline_refresh_24"
-                    android:contentDescription="@null"
-                    android:background="?android:selectableItemBackground" />
+<!-- To be added in future if we want a reset button -->
+<!--                <ImageButton-->
+<!--                    android:id="@+id/refresh_button"-->
+<!--                    android:layout_width="0dp"-->
+<!--                    android:layout_height="wrap_content"-->
+<!--                    android:layout_weight="0.2"-->
+<!--                    android:src="@drawable/baseline_refresh_24"-->
+<!--                    android:contentDescription="@null"-->
+<!--                    android:background="?android:selectableItemBackground" />-->
 
                 <TextView
                     android:id="@+id/tvHelper"

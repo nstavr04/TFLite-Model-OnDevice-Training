@@ -98,6 +98,10 @@ class TransferLearningHelper(
         interpreter = null
     }
 
+    // KNOWN BUG
+    // Keep an eye that if we press pause and train again, every time we do that, the reply buffer
+    // updates again. So make sure to train and then pause and add new samples if you want
+    // to train again.
     fun pauseTraining() {
         // Update replayBuffer with samples from this training cycle
 
@@ -106,8 +110,8 @@ class TransferLearningHelper(
         if(!replayBufferUpdated){
             Log.d("PauseTraining", "Updating replay buffer")
             // Disabling these for now
-            //updateReplayBuffer()
-            //resetTrainingSamples()
+            updateReplayBuffer()
+            resetTrainingSamples()
             replayBufferUpdated = true
         }
 
@@ -153,7 +157,7 @@ class TransferLearningHelper(
 
     // Start training process
     fun startTraining() {
-// || firstTrainingFlag
+
         if (interpreter == null || firstTrainingFlag) {
             setupModelPersonalization()
             firstTrainingFlag = false
@@ -161,6 +165,9 @@ class TransferLearningHelper(
         }
         else
         {
+            // Saving and loading of weights can be used in future if we have a lot of
+            // layers in the head of the model
+
             // Save weights
 //            val checkpointPath = MainActivity.getCheckpointPath(context)
 //            val saveInputs: MutableMap<String, Any> = HashMap()
@@ -169,7 +176,7 @@ class TransferLearningHelper(
 //            saveOutputs[SAVE_OUTPUT_KEY] = checkpointPath
 //            interpreter?.runSignature(saveInputs, saveOutputs, SAVE_KEY)
 
-             setupModelPersonalization()
+            setupModelPersonalization()
 
             // Load weights
 //            val restoreInputs: MutableMap<String, Any> = HashMap()
@@ -308,10 +315,12 @@ class TransferLearningHelper(
 
         Log.d("Loss", "Loss is ${loss.get(0)}")
 
+        // Used for debugging
+
         // Get weights and biases after training
-        val weights = getModelWeightsHead(bottlenecks)
+        // val weights = getModelWeightsHead(bottlenecks)
         // Use or print the weights and biases as needed
-        Log.d("WeightsAndBiases", "Weights: ${weights.contentToString()}")
+        // Log.d("WeightsAndBiases", "Weights: ${weights.contentToString()}")
 
         return loss.get(0)
     }
@@ -483,7 +492,7 @@ class TransferLearningHelper(
         Log.d("ReplayBuffer", "Replay buffer size after removing extra samples is now: ${replayBuffer.size}")
     }
 
-    // Still unsure about this but probably we want to remove the samples from the list after
+    // We want to remove the samples from the list after
     // training because the replayBuffer will retain the previous knowledge
     public fun resetTrainingSamples(){
         trainingSamples.clear()

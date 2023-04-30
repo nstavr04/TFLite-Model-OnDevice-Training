@@ -56,12 +56,13 @@ class MainActivity : AppCompatActivity() {
             HelperDialog().show(supportFragmentManager, HelperDialog.TAG)
         }
         // Call refresh function when user clicks on the refresh icon
-        activityMainBinding.refreshButton.setOnClickListener {
-            restartAppAndModel()
-        }
+        // Can implement it in future
+//        activityMainBinding.refreshButton.setOnClickListener {
+//            restartAppAndModel()
+//        }
     }
 
-    // Will want to implement this as a reset button
+    // Will can implement this as a reset button in future
     private fun restartAppAndModel() {
     }
 

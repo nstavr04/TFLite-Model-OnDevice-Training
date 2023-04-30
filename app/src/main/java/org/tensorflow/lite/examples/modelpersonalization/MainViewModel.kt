@@ -16,7 +16,6 @@
 
 package org.tensorflow.lite.examples.modelpersonalization
 
-import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import java.util.*
@@ -64,46 +63,6 @@ class MainViewModel : ViewModel() {
         map[className] = currentNumber + 1
         _numberOfSamples.postValue(map)
     }
-
-        // Resetting both models on button click
-//    var btnResetModels = activity!!.findViewById<Button>(R.id.btn_reset_models)
-//    btnResetModels.setOnClickListener(
-//    object : View.OnClickListener {
-//        override fun onClick(v: View) {
-//            val scenario = "default"
-//            databaseHelper.emptyReplayBuffer(scenario ?: "default")
-//            databaseHelper.emptyTrainingSamples(scenario ?: "default")
-//            databaseHelper.emptyClassButtonImages()
-//            clModel.model.trainingSamples.clear()
-//            tlModel.model.trainingSamples.clear()
-//            mViewModel.resetView()
-//            try {
-//                clModel.resetModelWeights(
-//                    getActivity().openFileOutput(
-//                        "clmodel_weights.edgeweights",
-//                        Context.MODE_PRIVATE
-//                    ).getChannel()
-//                )
-//                tlModel.resetModelWeights(
-//                    getActivity().openFileOutput(
-//                        "tlmodel_weights.edgeweights",
-//                        Context.MODE_PRIVATE
-//                    ).getChannel()
-//                )
-//                tlModel.model.loadParameters(
-//                    getActivity().openFileInput("tlmodel_weights.edgeweights").getChannel()
-//                )
-//                clModel.model.loadParameters(
-//                    getActivity().openFileInput("clmodel_weights.edgeweights").getChannel()
-//                )
-//            } catch (e: IOException) {
-//                e.printStackTrace()
-//            }
-//            getActivity().finish()
-//            getActivity().startActivity(getActivity().getIntent())
-//        }
-//    })
-
 
     fun getNumberOfSample() = numberOfSamples.value
 
